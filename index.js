@@ -1,4 +1,4 @@
-function QuizAppState() {
+function QuizAppModule() {
   const listQuestions = [
     "From which US city do the band The Killers originate?",
     "What was the Turkish city of Istanbul called before 1930?",
@@ -19,7 +19,7 @@ function QuizAppState() {
   const playBtnElement = document.querySelector(".play-btn");
   let timerInterval;
   let currentQuestionIndex = 0;
-  let currentCountDown = LIMIT_TOTAL_TIME;
+  let totalTimeLeft = LIMIT_TOTAL_TIME;
   return {
     getTimerInterval() {
       return timerInterval;
@@ -45,11 +45,11 @@ function QuizAppState() {
     setCurrentQuestionIndex(index) {
       currentQuestionIndex = index;
     },
-    getCurrentCountDown() {
-      return currentCountDown;
+    getTotalTimeLeft() {
+      return totalTimeLeft;
     },
-    setCurrentCountDown(seconds) {
-      currentCountDown = seconds;
+    setTotalTimeLeft(seconds) {
+      totalTimeLeft = seconds;
     },
     getQuizzAppElement() {
       return {
@@ -80,14 +80,14 @@ const {
   getCurrentQuestionIndex,
   getLimitAnswerTime,
   getLimitTotalTime,
-  getCurrentCountDown,
-  setCurrentCountDown,
+  getTotalTimeLeft,
+  setTotalTimeLeft,
   getListQuestion,
   getListAnswers,
   setListAnswers,
   setListAnswersToEmpty,
   getQuizzAppElement,
-} = QuizAppState();
+} = QuizAppModule();
 
 renderAnswerTimer(getLimitAnswerTime());
 renderTotalTimer();
@@ -104,29 +104,28 @@ function handlePlayGame() {
   renderQuizForm({ questionIndex: 0 });
 }
 const isTimeOver = () =>
-  getLimitTotalTime() - getCurrentCountDown() === getLimitTotalTime();
+  getLimitTotalTime() - getTotalTimeLeft() === getLimitTotalTime();
 const isLastQuestion = () =>
   getCurrentQuestionIndex() === getListQuestion().length - 1;
 function handleRunTimer() {
-  let tempAnswerSeconds = getLimitAnswerTime();
-  let currentCountdown = getCurrentCountDown();
+  let answerSecondLeft = getLimitAnswerTime();
+  let totalSecondLeft = getTotalTimeLeft();
   let currentQuestionIndex = getCurrentQuestionIndex();
-
   let timerInterval = setInterval(() => {
-    if (isTimeOver() || (tempAnswerSeconds === 0 && isLastQuestion())) {
+    if (isTimeOver() || (answerSecondLeft === 0 && isLastQuestion())) {
       handleFinishAnswering();
       return;
     }
-    if (tempAnswerSeconds === 0) {
+    if (answerSecondLeft === 0) {
       currentQuestionIndex++;
-      tempAnswerSeconds = getLimitAnswerTime();
+      answerSecondLeft = getLimitAnswerTime();
       nextQuestion({ questionIndex: currentQuestionIndex });
       return;
     }
-    currentCountdown--;
-    setCurrentCountDown(currentCountdown);
-    renderTotalTimer(currentCountdown);
-    renderAnswerTimer(--tempAnswerSeconds);
+    totalSecondLeft--;
+    setTotalTimeLeft(totalSecondLeft);
+    renderTotalTimer(totalSecondLeft);
+    renderAnswerTimer(--answerSecondLeft);
   }, 1000);
   setTimerInterval(timerInterval);
 }
@@ -180,7 +179,7 @@ function nextQuestion({ questionIndex }) {
 function handleFinishAnswering() {
   clearTimerInterval();
   const result = {
-    seconds: getLimitTotalTime() - getCurrentCountDown(),
+    seconds: getLimitTotalTime() - getTotalTimeLeft(),
     answers: getListAnswers().length,
     totalQuestions: getListQuestion().length,
   };
@@ -195,7 +194,7 @@ function handlePlayAgain() {
 function setAllToDefault() {
   setCurrentQuestionIndex(0);
   setListAnswersToEmpty();
-  setCurrentCountDown(getLimitTotalTime());
+  setTotalTimeLeft(getLimitTotalTime());
 
   renderTotalTimer();
   renderAnswerTimer(getLimitAnswerTime());
