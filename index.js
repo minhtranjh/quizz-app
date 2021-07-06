@@ -5,30 +5,34 @@ function QuizAppModule() {
     "Name the Coffee shop in US sitcom Friends",
     "How many human players are there on each side in a polo match?",
     "In what year did Tony Blair become British Prime Minister?",
-    // "What is the capital of New Zealand?",
-    // "Street artist Banksy is originally associated with which British city?"
+    "What is the capital of New Zealand?",
   ];
   const listAnswers = [];
-  const LIMIT_ANSWER_TIME = 10;
-  const LIMIT_TOTAL_TIME = listQuestions.length * LIMIT_ANSWER_TIME;
-  const answerFormElement = document.querySelector(".answer-form");
+  const LIMIT_ANSWER_TIME = 9;
+  const LIMIT_TOTAL_TIME = listQuestions.length * (LIMIT_ANSWER_TIME + 1);
+  const quizFormElement = document.querySelector(".answer-form");
   const timerWrapElement = document.querySelector(".timer-wrap");
   const timerElement = document.querySelector(".timer");
   const totalTimeElement = document.querySelector(".total-time");
   const resultWrapElement = document.querySelector(".result-wrap");
+  const maxTimeElement = document.querySelector(".max-time");
   const playBtnElement = document.querySelector(".play-btn");
-  let timerInterval;
+  let answerTimerInterval;
+  let totalTimerInterval;
   let currentQuestionIndex = 0;
-  let totalTimeLeft = LIMIT_TOTAL_TIME;
+  let currentTotalTime = 0;
   return {
-    getTimerInterval() {
-      return timerInterval;
+    setAnswerTimerInterval(i) {
+      answerTimerInterval = i;
     },
-    setTimerInterval(i) {
-      timerInterval = i;
+    setTotalTimerInterval(i) {
+      totalTimerInterval = i;
     },
-    clearTimerInterval() {
-      clearInterval(timerInterval);
+    clearAnswerTimerInterval() {
+      clearInterval(answerTimerInterval);
+    },
+    clearTotalTimerInterval() {
+      clearInterval(totalTimerInterval);
     },
     getListAnswers() {
       return listAnswers;
@@ -45,20 +49,21 @@ function QuizAppModule() {
     setCurrentQuestionIndex(index) {
       currentQuestionIndex = index;
     },
-    getTotalTimeLeft() {
-      return totalTimeLeft;
+    getCurrentTotalTime() {
+      return currentTotalTime;
     },
-    setTotalTimeLeft(seconds) {
-      totalTimeLeft = seconds;
+    setCurrentTotalTime(seconds) {
+      currentTotalTime = seconds;
     },
     getQuizzAppElement() {
       return {
-        answerFormElement,
+        quizFormElement,
         timerWrapElement,
         timerElement,
         totalTimeElement,
         resultWrapElement,
         playBtnElement,
+        maxTimeElement,
       };
     },
     getLimitAnswerTime() {
@@ -74,14 +79,16 @@ function QuizAppModule() {
 }
 
 const {
-  clearTimerInterval,
-  setTimerInterval,
+  clearAnswerTimerInterval,
+  setAnswerTimerInterval,
+  clearTotalTimerInterval,
+  setTotalTimerInterval,
   setCurrentQuestionIndex,
   getCurrentQuestionIndex,
   getLimitAnswerTime,
   getLimitTotalTime,
-  getTotalTimeLeft,
-  setTotalTimeLeft,
+  getCurrentTotalTime,
+  setCurrentTotalTime,
   getListQuestion,
   getListAnswers,
   setListAnswers,
@@ -89,30 +96,48 @@ const {
   getQuizzAppElement,
 } = QuizAppModule();
 
-renderAnswerTimer(getLimitAnswerTime());
 renderTotalTimer();
+renderMaxTime();
 getQuizzAppElement().playBtnElement.addEventListener("click", handlePlayGame);
+getQuizzAppElement().quizFormElement.addEventListener("submit", onSubmitAnswer);
 
-function renderTotalTimer(seconds = getLimitTotalTime()) {
+const isTimeOver = () => getCurrentTotalTime === getLimitTotalTime();
+
+const isLastQuestion = () =>
+  getCurrentQuestionIndex() === getListQuestion().length - 1;
+
+function renderTotalTimer(seconds = 0) {
   const html = `${formatSecondToTime(seconds)}`;
+  handleWarning(seconds);
   getQuizzAppElement().totalTimeElement.innerHTML = html;
 }
 
+function renderMaxTime() {
+  const html = `Max : ${formatSecondToTime(getLimitTotalTime())}`;
+  getQuizzAppElement().maxTimeElement.innerHTML = html;
+}
+
+function handleWarning(seconds) {
+  if (seconds >= getLimitTotalTime() - 3) {
+    getQuizzAppElement().totalTimeElement.classList.add("red");
+  } else {
+    getQuizzAppElement().totalTimeElement.classList.remove("red");
+  }
+}
+
 function handlePlayGame() {
+  renderAnswerTimer(getLimitAnswerTime());
   getQuizzAppElement().playBtnElement.classList.add("is-playing");
-  handleRunTimer();
+  handleRunAnswerTimer();
+  handleRunTotalTimer();
   renderQuizForm({ questionIndex: 0 });
 }
-const isTimeOver = () =>
-  getLimitTotalTime() - getTotalTimeLeft() === getLimitTotalTime();
-const isLastQuestion = () =>
-  getCurrentQuestionIndex() === getListQuestion().length - 1;
-function handleRunTimer() {
+
+function handleRunAnswerTimer() {
   let answerSecondLeft = getLimitAnswerTime();
-  let totalSecondLeft = getTotalTimeLeft();
   let currentQuestionIndex = getCurrentQuestionIndex();
   let timerInterval = setInterval(() => {
-    if (isTimeOver() || (answerSecondLeft === 0 && isLastQuestion())) {
+    if (answerSecondLeft === 0 && isLastQuestion()) {
       handleFinishAnswering();
       return;
     }
@@ -122,12 +147,24 @@ function handleRunTimer() {
       nextQuestion({ questionIndex: currentQuestionIndex });
       return;
     }
-    totalSecondLeft--;
-    setTotalTimeLeft(totalSecondLeft);
-    renderTotalTimer(totalSecondLeft);
-    renderAnswerTimer(--answerSecondLeft);
+    answerSecondLeft--;
+    renderAnswerTimer(answerSecondLeft);
   }, 1000);
-  setTimerInterval(timerInterval);
+  setAnswerTimerInterval(timerInterval);
+}
+
+function handleRunTotalTimer() {
+  let currentTotalSecond = getCurrentTotalTime();
+  let timerInterval = setInterval(() => {
+    if (isTimeOver()) {
+      handleFinishAnswering();
+      return;
+    }
+    currentTotalSecond++;
+    setCurrentTotalTime(currentTotalSecond);
+    renderTotalTimer(currentTotalSecond);
+  }, 1000);
+  setTotalTimerInterval(timerInterval);
 }
 
 function renderQuizForm({ questionIndex }) {
@@ -141,7 +178,7 @@ function renderQuizForm({ questionIndex }) {
                 <div class="submit-wrap">
                   <button type="submit" class="submit-btn">Next</button>
                 </div>`;
-  getQuizzAppElement().answerFormElement.innerHTML = html;
+  getQuizzAppElement().quizFormElement.innerHTML = html;
 }
 
 function renderAnswerTimer(seconds) {
@@ -149,17 +186,11 @@ function renderAnswerTimer(seconds) {
   getQuizzAppElement().timerWrapElement.innerHTML = html;
 }
 
-getQuizzAppElement().answerFormElement.addEventListener(
-  "submit",
-  onSubmitAnswer
-);
-
 function onSubmitAnswer(e) {
   e.preventDefault();
   let currentQuestionIndex = getCurrentQuestionIndex();
   const answer = e.target.answer.value;
   answer && setListAnswers(answer);
-
   if (isLastQuestion()) {
     handleFinishAnswering();
     return;
@@ -169,17 +200,18 @@ function onSubmitAnswer(e) {
 }
 
 function nextQuestion({ questionIndex }) {
-  clearTimerInterval();
+  clearAnswerTimerInterval();
   setCurrentQuestionIndex(questionIndex);
   renderAnswerTimer(getLimitAnswerTime());
   renderQuizForm({ questionIndex });
-  handleRunTimer();
+  handleRunAnswerTimer();
 }
 
 function handleFinishAnswering() {
-  clearTimerInterval();
+  clearAnswerTimerInterval();
+  clearTotalTimerInterval();
   const result = {
-    seconds: getLimitTotalTime() - getTotalTimeLeft(),
+    seconds: getCurrentTotalTime(),
     answers: getListAnswers().length,
     totalQuestions: getListQuestion().length,
   };
@@ -194,7 +226,7 @@ function handlePlayAgain() {
 function setAllToDefault() {
   setCurrentQuestionIndex(0);
   setListAnswersToEmpty();
-  setTotalTimeLeft(getLimitTotalTime());
+  setCurrentTotalTime(0);
 
   renderTotalTimer();
   renderAnswerTimer(getLimitAnswerTime());
@@ -210,9 +242,11 @@ function renderResultBox({ seconds, answers, totalQuestions }) {
   </div>`;
   getQuizzAppElement().resultWrapElement.innerHTML = html;
 }
+
 function removeResultBox() {
   getQuizzAppElement().resultWrapElement.innerHTML = ``;
 }
+
 function formatSecondToTime(second) {
   let sec_num = parseInt(second, 10);
   let hours = Math.floor(sec_num / 3600);

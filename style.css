@@ -28,6 +28,7 @@ body {
 textarea {
   width: 500px;
   padding: 10px;
+  margin-top: 30px;
   font-size: 18px;
   height: 100px;
 }
@@ -51,7 +52,12 @@ textarea {
  
 }
 .result-box{
-  padding: 50px 70px;
+  width: 500px;
+  height:300px;
+  display:flex;
+  align-items: center;
+  justify-content: center ;
+  flex-direction: column;
   text-align: center;
   color: white;
   background-color: rgb(242, 187, 67);
@@ -70,5 +76,16 @@ textarea {
 .total-time{
   font-size:30px;
   font-weight: bold;
+  transition: .5s ease;
   color: rgb(15, 80, 121);
+}
+.total-time.red{
+  color: red;
+}
+.total-time-wrapper{
+  position:absolute;
+  font-size:20px;
+  color: rgb(80, 120, 60);
+  top: 50px;
+  left: 50px;
 }
