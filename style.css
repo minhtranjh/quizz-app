@@ -39,7 +39,7 @@ textarea {
 .answer-form {
   text-align: center;
 }
-.submit-btn {
+.next-btn,.prev-btn {
   padding: 10px 20px;
   border: none;
   outline: none;
@@ -61,6 +61,9 @@ textarea {
   text-align: center;
   color: white;
   background-color: rgb(242, 187, 67);
+}
+.result-box h1:nth-child(2){
+  margin-bottom: 30px;
 }
 .play-again-btn,.play-btn{
   padding: 5px 10px;
@@ -88,4 +91,21 @@ textarea {
   color: rgb(80, 120, 60);
   top: 50px;
   left: 50px;
+}
+
+.question-num{
+  margin-top: 30px;
+  display:inline-block;
+  padding: 5px 10px;
+  cursor: pointer;
+  background:rgb(86, 177, 233);
+}
+.question-num.is-answering{
+  background: coral;
+}
+.question-num.is-timeout{
+  background: crimson;
+  user-select: none;
+  display: none;
+  pointer-events: none;
 }
